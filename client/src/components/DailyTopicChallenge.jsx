@@ -172,13 +172,13 @@ export default function DailyTopicChallenge({ voiceSettings, onFinishSession }) 
     processSpokenInput(spoken);
   };
 
-  const processSpokenInput = (spokenText) => {
+  const processSpokenInput = async (spokenText) => {
     setCharState('thinking');
     const topic = activeTopicRef.current;
     const currentStage = topic.stages[currentStageIdx];
 
-    // Evaluate answer with smart speech repair, self-correction, and native polish
-    const evalResult = aiService.evaluateGatekeeperPass(
+    // Evaluate answer with smart speech repair, self-correction, and native polish via Backend API
+    const evalResult = await aiService.evaluateGatekeeperPass(
       spokenText,
       currentStage,
       currentStage.keyVocab

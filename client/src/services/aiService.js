@@ -445,7 +445,7 @@ Output only pure JSON. Do not include markdown code fences or other text.
   }
 
   // Strict Gatekeeper Pass/Fail Validator with Smart Repair
-  evaluateGatekeeperPass(userUtterance, stageInfo = {}, keyVocab = []) {
+  async evaluateGatekeeperPass(userUtterance, stageInfo = {}, keyVocab = []) {
     // 1. Clean and repair stutters, false starts ("tommo tomorrow" -> "tomorrow"), and contextual slips ("hearts" -> "tasks")
     const vocabList = keyVocab.concat(stageInfo.keyVocab || []);
     const { cleanedText, repairedWords } = SpeechRepairService.cleanAndRepairSpeech(
@@ -456,7 +456,30 @@ Output only pure JSON. Do not include markdown code fences or other text.
     const raw = (cleanedText || userUtterance || '').trim();
     const lower = raw.toLowerCase();
 
-    // 2. Structural & Grammar checks
+    // Try Backend Server API (/api/evaluate/gatekeeper)
+    try {
+      const serverRes = await fetch(`${this.backendUrl}/api/evaluate/gatekeeper`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userUtterance: raw,
+          rawUtterance: userUtterance,
+          stageInfo,
+          repairedWords
+        })
+      });
+      if (serverRes.ok) {
+        const data = await serverRes.json();
+        return {
+          ...data,
+          repairedWords: data.repairedWords || repairedWords
+        };
+      }
+    } catch (err) {
+      console.warn('Backend gatekeeper unreachable, falling back to local engine:', err.message);
+    }
+
+    // 2. Structural & Grammar checks (Local Fallback)
     const checks = [
       {
         regex: /\b(i am agree|i'm agree)\b/i,
