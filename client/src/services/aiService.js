@@ -5,7 +5,7 @@ export class AIService {
   constructor() {
     this.apiKey = '';
     this.provider = 'gemini'; // 'gemini' | 'openai' | 'offline'
-    this.backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+    this.backendUrl = (import.meta.env.VITE_API_URL || 'http://localhost:5001').replace(/\/+$/, '');
     this.loadSettings();
   }
 
@@ -16,7 +16,7 @@ export class AIService {
       const savedBackend = localStorage.getItem('speakflow_backend_url');
       if (savedKey) this.apiKey = savedKey;
       if (savedProvider) this.provider = savedProvider;
-      if (savedBackend) this.backendUrl = savedBackend;
+      if (savedBackend) this.backendUrl = savedBackend.replace(/\/+$/, '');
     } catch (e) {
       console.warn('Storage unavailable:', e);
     }
@@ -25,11 +25,11 @@ export class AIService {
   saveSettings(provider, apiKey, backendUrl) {
     this.provider = provider;
     this.apiKey = apiKey;
-    if (backendUrl) this.backendUrl = backendUrl;
+    if (backendUrl) this.backendUrl = backendUrl.replace(/\/+$/, '');
     try {
       localStorage.setItem('speakflow_ai_provider', provider);
       localStorage.setItem('speakflow_api_key', apiKey);
-      if (backendUrl) localStorage.setItem('speakflow_backend_url', backendUrl);
+      if (backendUrl) localStorage.setItem('speakflow_backend_url', this.backendUrl);
     } catch (e) {
       console.warn('Storage unavailable:', e);
     }

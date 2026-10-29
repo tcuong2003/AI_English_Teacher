@@ -17,6 +17,14 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '10mb' }));
 
+// Normalize duplicate slashes in request URL (e.g. //api/chat -> /api/chat)
+app.use((req, res, next) => {
+  if (req.url.startsWith('//')) {
+    req.url = req.url.replace(/^\/+/, '/');
+  }
+  next();
+});
+
 // Healthcheck endpoint (Crucial for Render.com free tier health checks)
 app.get('/', (req, res) => {
   res.json({
