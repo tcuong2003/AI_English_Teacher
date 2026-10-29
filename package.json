@@ -1,25 +1,31 @@
 {
   "name": "ai-english-teacher",
+  "version": "2.0.0",
   "private": true,
-  "version": "0.0.0",
-  "type": "module",
+  "description": "SpeakFlow AI - AI English Teacher (Monorepo: Frontend + Backend)",
+  "workspaces": [
+    "client",
+    "server"
+  ],
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "lint": "oxlint",
-    "preview": "vite preview"
+    "dev": "npm --prefix client run dev",
+    "dev:server": "npm --prefix server run dev",
+    "dev:all": "npm run dev:server & npm run dev",
+    "build": "npm --prefix client run build",
+    "start": "npm --prefix server run start",
+    "install:all": "npm --prefix client install && npm --prefix server install"
   },
-  "dependencies": {
-    "canvas-confetti": "^1.9.4",
-    "lucide-react": "^1.61.0",
-    "react": "^19.3.1",
-    "react-dom": "^19.3.1"
-  },
-  "devDependencies": {
-    "@types/react": "^19.3.0",
-    "@types/react-dom": "^19.3.0",
-    "@vitejs/plugin-react": "^6.1.2",
-    "oxlint": "^1.88.0",
-    "vite": "^8.3.4"
-  }
+  "keywords": [
+    "ai",
+    "english-learning",
+    "gemini",
+    "speech-recognition",
+    "text-to-speech",
+    "react",
+    "nodejs",
+    "express"
+  ],
+  "author": "",
+  "license": "MIT"
 }
+

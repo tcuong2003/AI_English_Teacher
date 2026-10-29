@@ -5,6 +5,7 @@ export class AIService {
   constructor() {
     this.apiKey = '';
     this.provider = 'gemini'; // 'gemini' | 'openai' | 'offline'
+    this.backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
     this.loadSettings();
   }
 
@@ -12,19 +13,23 @@ export class AIService {
     try {
       const savedKey = localStorage.getItem('speakflow_api_key');
       const savedProvider = localStorage.getItem('speakflow_ai_provider');
+      const savedBackend = localStorage.getItem('speakflow_backend_url');
       if (savedKey) this.apiKey = savedKey;
       if (savedProvider) this.provider = savedProvider;
+      if (savedBackend) this.backendUrl = savedBackend;
     } catch (e) {
       console.warn('Storage unavailable:', e);
     }
   }
 
-  saveSettings(provider, apiKey) {
+  saveSettings(provider, apiKey, backendUrl) {
     this.provider = provider;
     this.apiKey = apiKey;
+    if (backendUrl) this.backendUrl = backendUrl;
     try {
       localStorage.setItem('speakflow_ai_provider', provider);
       localStorage.setItem('speakflow_api_key', apiKey);
+      if (backendUrl) localStorage.setItem('speakflow_backend_url', backendUrl);
     } catch (e) {
       console.warn('Storage unavailable:', e);
     }
@@ -43,7 +48,31 @@ export class AIService {
       scenario.keyVocabulary?.map(v => v.term) || []
     );
 
-    // 1. If Gemini API key is configured, use live LLM
+    // 1. First priority: Call Backend Server API (Protected server-side AI processing)
+    try {
+      const serverRes = await fetch(`${this.backendUrl}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          scenario,
+          conversationHistory,
+          userUtterance: cleanedText,
+          feedbackStyle
+        })
+      });
+
+      if (serverRes.ok) {
+        const data = await serverRes.json();
+        return {
+          ...data,
+          repairedWords
+        };
+      }
+    } catch (backendErr) {
+      console.warn('Backend server call unreachable, using client-side fallback:', backendErr.message);
+    }
+
+    // 2. Second priority: If user entered personal Gemini API key in Settings
     if (this.provider === 'gemini' && this.apiKey && this.apiKey.trim().length > 5) {
       try {
         const geminiRes = await this.callGeminiAPI({ scenario, conversationHistory, userUtterance: cleanedText, feedbackStyle });
@@ -52,11 +81,11 @@ export class AIService {
           repairedWords
         };
       } catch (err) {
-        console.warn('Gemini API call failed, falling back to built-in smart engine:', err);
+        console.warn('Client Gemini API call failed, falling back to smart engine:', err);
       }
     }
 
-    // 2. Fallback: Built-in Smart Heuristic & Contextual Engine
+    // 3. Third priority: Built-in Smart Heuristic & Contextual Engine
     const localRes = this.generateSmartLocalResponse({ scenario, conversationHistory, userUtterance: cleanedText });
     return {
       ...localRes,
